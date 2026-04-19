@@ -41,9 +41,6 @@ local function build_gui()
 	frame.Size = UDim2.new(0, 600, 0, 420)
 	frame.Parent = gui
 
- local corner = Instance.new("UICorner")
- corner.Parent = frame
-
 	local status = Instance.new("TextLabel")
 	status.BackgroundTransparency = 1
 	status.BorderSizePixel = 0
