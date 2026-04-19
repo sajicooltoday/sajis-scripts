@@ -1,9 +1,5 @@
 -- author: saji
--- cleaned by: claude
--- no comments because im too lazy so just read the code lel
--- love yall hope yall enjoy this
--- report bugs here: https://discord.gg/5SszD6fWC8
--- fuck the people who was gatekeeping this method lolololoolol
+-- https://discord.gg/5SszD6fWC8
 
 local uis = cloneref(game:GetService("UserInputService"))
 local tween_service = cloneref(game:GetService("TweenService"))
@@ -53,7 +49,7 @@ local function build_gui()
 	status.BorderSizePixel = 0
 	status.Position = UDim2.new(0, 5, 0, 5)
 	status.Size = UDim2.new(1, -10, 0, 18)
-	status.Text = "choose scan speed below..."
+	status.Text = ""
 	status.TextColor3 = Color3.fromRGB(255, 200, 60)
 	status.TextXAlignment = Enum.TextXAlignment.Left
 	status.Parent = frame
