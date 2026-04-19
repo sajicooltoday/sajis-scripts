@@ -147,6 +147,9 @@ local function build_speed_menu()
 	overlay.ZIndex = 10
 	overlay.Parent = gui_frame
 
+	local corner = Instance.new("UICorner")
+	corner.Parent = overlay
+
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
 	title.Position = UDim2.new(0, 0, 0, 80)
