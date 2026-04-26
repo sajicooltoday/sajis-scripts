@@ -7,7 +7,7 @@ local run_service = cloneref(game:GetService("RunService"))
 local players = cloneref(game:GetService("Players"))
 local core_gui = cloneref(game:GetService("CoreGui"))
 
-local prefix = "[SAJI'S SERVERSIDE SCANNER (@sajixo on discord)]: "
+local prefix = "[SERVER SCANNER]: "
 local roots = { server_storage = true, server_script_service = true }
 local root_map = { server_storage = "ServerStorage", server_script_service = "ServerScriptService" }
 local skip = { CorePackages = true, RobloxReplicatedStorage = true, Players = true, CoreGui = true }
@@ -152,11 +152,11 @@ local function build_speed_menu()
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.new(0, 0, 0, 80)
+	title.Position = UDim2.new(0, 0, 0, 65)
 	title.Size = UDim2.new(1, 0, 0, 30)
-	title.Text = "select scan speed"
+	title.Text = "discord.gg/5SszD6fWC8\nselect scan speed"
 	title.TextColor3 = Color3.new(1, 1, 1)
-	title.TextSize = 18
+	title.TextSize = 15
 	title.ZIndex = 11
 	title.Parent = overlay
 
@@ -171,9 +171,9 @@ local function build_speed_menu()
 	sub.Parent = overlay
 
 	local btn_data = {
-		{ label = "safe  (2s delay)",   color = Color3.fromRGB(40, 140, 60),  delay = 2   },
-		{ label = "normal  (1s delay)", color = Color3.fromRGB(180, 140, 20), delay = 1   },
-		{ label = "fast  (0.5s delay)", color = Color3.fromRGB(180, 80, 20),  delay = 0.5 },
+		{ label = "safe (2s delay)",   color = Color3.fromRGB(40, 140, 60),  delay = 2   },
+		{ label = "normal (1s delay)", color = Color3.fromRGB(180, 140, 20), delay = 1   },
+		{ label = "fast (0.5s delay)", color = Color3.fromRGB(180, 80, 20),  delay = 0.5 },
         { label = "no delay (high end pc)", color = Color3.fromRGB(180, 30, 20),  delay = 0 },
 	}
 
@@ -266,6 +266,8 @@ local var_patterns = {
 	{ "local%s+([%w_]+)%s*=%s*game%.ServerScriptService",                "server_script_service" },
 	{ 'local%s+([%w_]+)%s*=%s*game:GetService%("ServerStorage"%)',       "server_storage"        },
 	{ 'local%s+([%w_]+)%s*=%s*game:GetService%("ServerScriptService"%)', "server_script_service" },
+    { 'local%s+([%w_]+)%s*=%s*game:FindService%("ServerStorage"%)',       "server_storage"        },
+	{ 'local%s+([%w_]+)%s*=%s*game:FindService%("ServerScriptService"%)', "server_script_service" },
 }
 
 local direct_patterns = {
@@ -382,7 +384,7 @@ log("scan complete ✅")
 log("scripts scanned: " .. stats.total)
 log("successfully decompiled: " .. stats.decompiled)
 log("scripts with references: " .. stats.matched)
-log("if scripts were found, open up dex or any explorer and view server :3 - saji")
+log("if scripts were found, open up dex or any explorer")
 
 status_label.Text = "done — " .. stats.matched .. " matches in " .. stats.total .. " scripts (discord.gg/5SszD6fWC8)"
 status_label.TextColor3 = Color3.fromRGB(100, 220, 100)
