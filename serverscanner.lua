@@ -6,17 +6,22 @@ local tween_service = cloneref(game:GetService("TweenService"))
 local run_service = cloneref(game:GetService("RunService"))
 local players = cloneref(game:GetService("Players"))
 local core_gui = cloneref(game:GetService("CoreGui"))
+local rrs = cloneref(game:GetService("RobloxReplicatedStorage"))
+local sg = cloneref(game:GetService("StarterGui"))
+
+local args = {"syeg", 36, {1, 2}, {tset = 2, sax = 21}, workspace}
 
 local prefix = "[SERVER SCANNER]: "
 local roots = { server_storage = true, server_script_service = true }
 local root_map = { server_storage = "ServerStorage", server_script_service = "ServerScriptService" }
 local skip = { CorePackages = true, RobloxReplicatedStorage = true, Players = true, CoreGui = true }
 
-local stats = { total = 0, decompiled = 0, matched = 0 }
+local stats = { total = 0, decompiled = 0, matched = 0, rf_total = 0, rf_scripts = 0 }
 local log_count = 0
 local max_line_width = 0
 local log_queue = {}
 local scan_delay = 2
+local do_rf_scan = false
 
 local status_label: TextLabel
 local gui_frame: Frame
@@ -152,7 +157,7 @@ local function build_speed_menu()
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.new(0, 0, 0, 65)
+	title.Position = UDim2.new(0, 0, 0, 10)
 	title.Size = UDim2.new(1, 0, 0, 30)
 	title.Text = "discord.gg/5SszD6fWC8\nselect scan speed"
 	title.TextColor3 = Color3.new(1, 1, 1)
@@ -162,7 +167,7 @@ local function build_speed_menu()
 
 	local sub = Instance.new("TextLabel")
 	sub.BackgroundTransparency = 1
-	sub.Position = UDim2.new(0, 0, 0, 115)
+	sub.Position = UDim2.new(0, 0, 0, 60)
 	sub.Size = UDim2.new(1, 0, 0, 20)
 	sub.Text = "faster = higher risk of breaking the game"
 	sub.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -183,7 +188,7 @@ local function build_speed_menu()
 		local btn = Instance.new("TextButton")
 		btn.BackgroundColor3 = data.color
 		btn.BorderSizePixel = 0
-		btn.Position = UDim2.new(0.5, -120, 0, 155 + (i - 1) * 45)
+		btn.Position = UDim2.new(0.5, -120, 0, 100 + (i - 1) * 45)
 		btn.Size = UDim2.new(0, 240, 0, 34)
 		btn.Text = data.label
 		btn.TextColor3 = Color3.new(1, 1, 1)
@@ -195,6 +200,39 @@ local function build_speed_menu()
 			chosen:Fire(data.delay)
 		end)
 	end
+
+	local warning = Instance.new("TextLabel")
+	warning.BackgroundTransparency = 1
+	warning.Position = UDim2.new(0, 0, 0, 320)
+	warning.Size = UDim2.new(1, 0, 0, 30)
+	warning.Text = "Pros: Finds more scripts\nCons: May cause unexpected behaviour, like kicks, bans or teleports"
+	warning.TextColor3 = Color3.new(1, 1, 1)
+	warning.TextSize = 14
+	warning.ZIndex = 11
+	warning.Parent = overlay
+
+	local rf_scan_btn = Instance.new("TextButton")
+	rf_scan_btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	rf_scan_btn.BorderSizePixel = 0
+	rf_scan_btn.Position = UDim2.new(0.5, -120, 0, 365)
+	rf_scan_btn.Size = UDim2.new(0, 240, 0, 34)
+	rf_scan_btn.Text = "RemoteFunction scan: OFF"
+	rf_scan_btn.TextColor3 = Color3.new(1, 1, 1)
+	rf_scan_btn.TextSize = 14
+	rf_scan_btn.ZIndex = 11
+	rf_scan_btn.Parent = overlay
+
+	rf_scan_btn.MouseButton1Click:Connect(function()
+		do_rf_scan = not do_rf_scan
+
+		if do_rf_scan then
+			rf_scan_btn.BackgroundColor3 = Color3.fromRGB(40, 140, 60)
+			rf_scan_btn.Text = "RemoteFunction scan: ON"
+		else
+			rf_scan_btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			rf_scan_btn.Text = "RemoteFunction scan: OFF"
+		end
+	end)
 
 	local picked_delay = chosen.Event:Wait()
 	chosen:Destroy()
@@ -380,10 +418,114 @@ for _, child in ipairs(game:GetChildren()) do
 	end
 end
 
+if do_rf_scan then
+	local notFound = true
+	log("starting RemoteFunction scan... ⚠️")
+
+	local function invokeWithTimeout(remote, timeout, ...)
+		timeout = timeout or 10
+
+		local result
+		local success
+		local done = false
+
+		local args = {...}
+
+		task.spawn(function()
+			success, result = pcall(function()
+				return remote:InvokeServer(table.unpack(args))
+			end)
+			done = true
+		end)
+
+		local start = os.clock()
+		while not done and os.clock() - start < timeout do
+			task.wait()
+		end
+
+		if done then
+			return success, result
+		else
+			return false, "TIMEOUT_ERR"
+		end
+	end
+
+	local function createInstanceFromString(path)
+		local splitted = string.split(path, '.')
+		if splitted[1] == 'ServerStorage' or splitted[1] == 'ServerScriptService' then
+			local child = cloneref(game:GetService(splitted[1]))
+			table.remove(splitted, 1)
+
+			local lengthSplitted = #splitted
+			for i, v in ipairs(splitted) do
+				if child:FindFirstChild(v) then
+					child = child[v]
+				else
+					local inst
+					if i == lengthSplitted then
+						inst = Instance.new('Script')
+					else
+						inst = Instance.new('Folder')
+					end
+					inst.Name = v
+					inst.Parent = child
+					child = inst
+				end
+			end
+		end
+	end
+
+	for _, v in ipairs(game:GetDescendants()) do
+		if (not v:IsDescendantOf(rrs)) and v:IsA("RemoteFunction") then
+			stats.rf_total += 1
+			notFound = true
+			log('scanning: '..v:GetFullName())
+			local success, result = invokeWithTimeout(v, 10)
+
+			if result == 'TIMEOUT_ERR' then
+				log('❌ timed out: '..v:GetFullName())
+				notFound = false
+			elseif success or not string.find(tostring(result), '.', 1, true) then
+				for _, arg in ipairs(args) do
+					success, result = invokeWithTimeout(v, 10, arg)
+
+					if not success then
+						local path = string.match(tostring(result), "^[^:]+")
+						if path then
+							stats.rf_scripts += 1
+							log("✅ found path: "..path)
+							createInstanceFromString(path)
+							notFound = false
+							break
+						end
+					end
+				end
+			else
+				local path = string.match(tostring(result), "^[^:]+")
+				if path then
+					stats.rf_scripts += 1
+					log("✅ found path: "..path)
+					createInstanceFromString(path)
+					notFound = false
+				end
+			end
+			if notFound then
+				log("❌ didn't find in: "..v:GetFullName())
+			end
+		end
+	end
+else
+	log("second method skipped")
+end
+
 log("scan complete ✅")
 log("scripts scanned: " .. stats.total)
 log("successfully decompiled: " .. stats.decompiled)
 log("scripts with references: " .. stats.matched)
+if do_rf_scan then
+	log("remote functions scanned: " .. stats.rf_total)
+	log("remote functions that gave script paths: " .. stats.rf_scripts)
+end
 log("if scripts were found, open up dex or any explorer")
 
 status_label.Text = "done — " .. stats.matched .. " matches in " .. stats.total .. " scripts (discord.gg/5SszD6fWC8)"
